@@ -5,6 +5,10 @@ import {
   Context,
 } from "aws-lambda";
 import { postSpaces } from "./PostSpaces";
+import { getSpaces } from "./GetSpaces";
+import { updateSpace } from "./UpdateSpace";
+import { deleteSpace } from "./DeleteSpace";
+import { JsonError, MissingFieldError } from "../shared/Validator";
 
 const ddbClient = new DynamoDBClient({});
 
@@ -17,20 +21,40 @@ async function handler(
   try {
     switch (event.httpMethod) {
       case "GET":
-        message = "Hello from GET!";
-        break;
+        const getResponse = await getSpaces(event, ddbClient);
+        console.log(getResponse);
+        return getResponse;
       case "POST":
-        const response = postSpaces(event, ddbClient);
-        return response;
+        const postResponse = await postSpaces(event, ddbClient);
+        return postResponse;
+      case "PUT":
+        const putResponse = await updateSpace(event, ddbClient);
+        console.log(putResponse);
+        return putResponse;
+      case "DELETE":
+        const deleteResponse = await deleteSpace(event, ddbClient);
+        console.log(deleteResponse);
+        return deleteResponse;
       default:
-        message = "Invalid httpMethod";
+        message = `Unsupported method "${event.httpMethod}"`;
         break;
     }
-  } catch (error: any) {
-    console.error(error);
+  } catch (error) {
+    if (error instanceof MissingFieldError) {
+      return {
+        statusCode: 400,
+        body: error.message,
+      };
+    }
+    if (error instanceof JsonError) {
+      return {
+        statusCode: 400,
+        body: (error as JsonError).message,
+      };
+    }
     return {
       statusCode: 500,
-      body: JSON.stringify(error.message),
+      body: (error as Error).message,
     };
   }
 
