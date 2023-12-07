@@ -11,7 +11,8 @@
       "runtimeArgs": ["-r", "ts-node/register"], // typscript config
       "args": ["${relativeFile}"],
       "env": {
-        "AWS_REGION": "ap-south-1"
+        "AWS_REGION": "ap-south-1",
+        "TABLE_NAME": "SpaceTable-0a7222c5e644"
       }
     }
   ]

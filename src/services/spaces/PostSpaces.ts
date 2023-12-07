@@ -9,6 +9,7 @@ export async function postSpaces(
   ddbClient: DynamoDBClient
 ): Promise<APIGatewayProxyResult> {
   const randomId = createRandomId();
+  
   const item = parseJSON(event.body!);
   item.id = randomId;
   validateAsSpaceEntry(item);
