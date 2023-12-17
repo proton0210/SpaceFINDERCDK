@@ -1,11 +1,19 @@
 import { Amplify } from "aws-amplify";
+
 import * as dotenv from "dotenv";
 dotenv.config();
+
 import { ResourcesConfig } from "@aws-amplify/core";
-import { CognitoIdentityClient } from "@aws-sdk/client-cognito-identity";
+
+import {
+  CognitoIdentityClient,
+  GetCredentialsForIdentityCommand,
+} from "@aws-sdk/client-cognito-identity";
+
 import { fromCognitoIdentityPool } from "@aws-sdk/credential-providers";
 import { getCurrentUser, signIn, type SignInInput } from "aws-amplify/auth";
 import { fetchAuthSession } from "aws-amplify/auth";
+
 const awsRegion = "ap-south-1";
 
 const config: ResourcesConfig = {
@@ -13,6 +21,7 @@ const config: ResourcesConfig = {
     Cognito: {
       userPoolId: process.env.USER_POOL_ID as string,
       userPoolClientId: process.env.USER_POOL_CLIENT_ID as string,
+      identityPoolId: process.env.IDENTITY_POOL_ID as string,
     },
   },
 };
@@ -30,17 +39,30 @@ export class AuthService {
   }
 
   public async generateTemporaryCredentials(user: any) {
-    const jwtToken = user.getSignInUserSession().getIdToken().getJwtToken();
-    const cognitoIdentityPool = `cognito-idp.${awsRegion}.amazonaws.com/eu-west-1_azOXLiuLi`;
-    const cognitoIdentity = new CognitoIdentityClient({
-      credentials: fromCognitoIdentityPool({
-        identityPoolId: "eu-west-1:5b2b0567-17ce-4070-b540-3e4688c46f43",
-        logins: {
+    try {
+      const jwtToken = user.getSignInUserSession()?.getIdToken().getJwtToken();
+      const cognitoIdentityPool = `cognito-idp.ap-south-1:905104588898:identitypool/ap-south-1:d8a17d35-a42b-4615-8fbc-a9c0379a0238`;
+
+      const cognitoIdentity = new CognitoIdentityClient({
+        credentials: fromCognitoIdentityPool({
+          identityPoolId: "ap-south-1:d8a17d35-a42b-4615-8fbc-a9c0379a0238",
+          logins: {
+            [cognitoIdentityPool]: jwtToken,
+          },
+        }),
+      });
+
+      const command = new GetCredentialsForIdentityCommand({
+        IdentityId: "ap-south-1:d8a17d35-a42b-4615-8fbc-a9c0379a0238",
+        Logins: {
           [cognitoIdentityPool]: jwtToken,
         },
-      }),
-    });
-    const credentials = await cognitoIdentity.config.credentials();
-    return credentials;
+      });
+      const credentials = await cognitoIdentity.send(command);
+      return credentials;
+    } catch (error) {
+      console.log(`❌❌❌: `, error);
+    }
+    return null;
   }
 }

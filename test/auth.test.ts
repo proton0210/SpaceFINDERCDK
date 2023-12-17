@@ -5,6 +5,8 @@ async function testAuth() {
   const loginResult = await service.login("vidit0210", "Qwerty123@");
 
   console.log(loginResult);
+  const credentials = await service.generateTemporaryCredentials(loginResult);
+  console.log(credentials);
 }
 
 testAuth();
